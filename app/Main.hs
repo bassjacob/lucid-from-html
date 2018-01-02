@@ -85,7 +85,6 @@ help = unlines $
     , "OPTIONS"
     , usageInfo "" options
     , ""
-    , "Note: Tag <tt> in input file is allowed and will be converted to <code>."
     ]
 
 -- | Options for the CLI program
