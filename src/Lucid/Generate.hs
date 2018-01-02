@@ -90,7 +90,7 @@ removeEmptyText :: Html -> Html
 removeEmptyText (Block b) = Block $ map removeEmptyText $ flip filter b $ \h ->
     case h of Text text -> any (not . isSpace) text
               _         -> True
-removeEmptyText (Parent tag attrs inner) =
+removeEmptyText (Parent tag attrs inner) | tag `elem` cleanTags =
     Parent tag attrs $ removeEmptyText inner
 removeEmptyText x = x
 
@@ -240,7 +240,7 @@ lucidFromHtml :: HtmlVariant  -- ^ Variant to use
 lucidFromHtml variant opts name =
     unlines . addSignature . fromHtml variant opts
             . minimizeBlocks
-            -- . removeEmptyText   -- causes glueing of words, see bug #13 
+            . removeEmptyText   -- can cause a glueing of words, see bug #13 
             . fst . makeTree variant (ignore_ opts) []
             -- . canonicalizeTags
             . parseTagsOptions parseOptions { optTagPosition = True}

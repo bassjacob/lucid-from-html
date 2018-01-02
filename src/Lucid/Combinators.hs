@@ -228,6 +228,19 @@ makeAttribute name = unlines
   where
     function = sanitize name
 
+-- | List of block-level elements
+blockTags :: [String]
+blockTags =
+  [ "address","article","aside","blockquote","canvas","dd","div","dl","dt"
+  , "fieldset","figcaption","figure","footer","form","h1","h2","h3","h4"
+  , "h5","h6","header","hgroup","hr","li","main","nav","noscript","ol"
+  , "output","p","pre","section","table","tfoot","ul","video"]
+
+-- | List of tags where we can remove empty strings
+cleanTags :: [String]
+cleanTags = blockTags ++
+  [ "html", "head", "body"]
+
 
 -- | HTML 5.0
 -- A good reference can be found here:
