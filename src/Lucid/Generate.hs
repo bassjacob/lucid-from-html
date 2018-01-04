@@ -240,7 +240,7 @@ lucidFromHtml :: HtmlVariant  -- ^ Variant to use
 lucidFromHtml variant opts name =
     unlines . addSignature . fromHtml variant opts
             . minimizeBlocks
-            . removeEmptyText   -- can cause a glueing of words, see bug #13 
+            -- . removeEmptyText   -- can cause a glueing of words, see bug #13 
             . fst . makeTree variant (ignore_ opts) []
             -- . canonicalizeTags
             . parseTagsOptions parseOptions { optTagPosition = True}
