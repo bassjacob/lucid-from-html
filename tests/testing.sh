@@ -2,7 +2,7 @@
 
 OUT=$(mktemp -d "outXXX")
 
-echo "For each .html file generate corresponding Lucid code
+echo "For each .html file generate corresponding Lucid code"
 echo "in .hs file. Then produce html back from Lucid."
 echo
 echo "Processing html"

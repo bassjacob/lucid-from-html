@@ -13,6 +13,7 @@ import "base" Data.Char (isSpace, showLitChar)
 import "base" Control.Arrow (first)
 
 import "tagsoup" Text.HTML.TagSoup
+import "tagsoup" Text.HTML.TagSoup.Tree
 
 import Lucid.Sanitize (sanitize, lowerize)
 import Lucid.Combinators
@@ -111,6 +112,158 @@ combinatorType variant combinator
     | combinator `elem` leafs variant = LeafCombinator
     | otherwise = UnknownCombinator
 
+
+
+-- | Produce the Lucid code from the HTML. The result is a list of lines.
+--
+fromTagTree :: HtmlVariant    -- ^ Used HTML variant
+         -> Options           -- ^ Building options
+         -> [TagTree String]  -- ^ HTML tree
+         -> [String]          -- ^ Resulting lines of code
+fromTagTree variant opts xs =
+  concatMap (fromTagTree2 variant opts) (group2 xs)
+  where
+    group2 (y1:y2:ys) = [y1,y2] : group2 ys
+    group2 ys = [ys]
+
+
+-- | Produce the Lucid code from the HTML. The result is a list of lines.
+--
+fromTagTree2 :: HtmlVariant    -- ^ Used HTML variant
+         -> Options            -- ^ Building options
+         -> [TagTree String]   -- ^ HTML tree
+         -> [String]           -- ^ Resulting lines of code
+fromTagTree2 variant opts [TagLeaf (TagPosition row _),  TagLeaf x] =
+  case x of 
+    TagText text -> 
+      ["\"" ++ escapeString (trim text) ++ "\""]
+    TagComment comment ->
+      ["toHtmlRaw  \"<!--" ++ escapeString comment ++ "-->\""]
+    TagOpen tag attrs ->
+      let tag' = lowerize tag
+      in
+        case combinatorType variant tag' of
+          LeafCombinator -> [combinator]
+          _  ->
+            if tag' == "!doctype"
+            then ["doctype_"]
+            else
+              error $ "Line: " ++ show row ++ " tag '"
+                      ++ tag ++ "' is open but nowhere closed "
+        where
+          combinator :: String
+          combinator = 
+            let tag' = sanitize tag 
+            in 
+              case combinatorType variant (lowerize tag) of
+                UnknownCombinator ->
+                  error $ "Line: " ++ show row ++ " tag '"
+                          ++ tag ++ "' is illegal in "
+                          ++ show variant
+                _ -> tag' ++ attributes' attrs
+          attributes' :: Show a => [(String, a)] -> [Char]
+          -- hack for <br> that needs attributes in Lucid
+          attributes' [] = if sanitize tag `elem` ["br_","hr_"] 
+                            then " []"
+                            else ""
+          attributes' xs =  (" [ " ++) . (++ " ]") . intercalate ", " . fmap displayAttr $ xs
+          displayAttr :: Show a => (String, a) -> String
+          displayAttr (k, v) = case k `elem` attributes variant of
+              True  -> let k' = sanitize k 
+                      in case k' of 
+                              "autofocus_" -> k'
+                              "checked_" -> k'
+                              "ngNonBindable_" -> k'
+                              _ -> k' ++ " " ++ show v
+              False -> case stripPrefix "data-" k of
+                  Just prefix -> "data_" ++ " "
+                              ++ show prefix
+                              ++ " " ++ show v
+                  Nothing | ignore_ opts -> ""
+                          | otherwise  -> error $ "Line " ++ show row
+                                      ++ ": attribute '"
+                                      ++ k ++ "' is illegal in "
+                                      ++ show variant
+    _ -> error $ "Line " ++ show row ++ ": " ++ show x ++ " tag is hanging." 
+  where
+    -- Remove whitespace on both ends of a string
+    trim
+      | noTrimText_ opts = id
+      | otherwise        = reverse . dropWhile isSpace . reverse . dropWhile isSpace
+fromTagTree2 variant opts branch@[TagLeaf (TagPosition row _), TagBranch tag attrs inner] =
+  let tag' = lowerize tag
+  in
+    if tag' == "svg"
+    then ["toHtmlRaw \"" ++ escapeString (renderTree branch) ++ "\""]
+    else
+      case combinatorType variant tag' of
+          -- Actual parent tags
+          ParentCombinator -> 
+            let ls = fromTagTree variant opts inner
+            in 
+              case ls  of
+                [] -> [combinator ++ " $ \"\""]
+                _  -> (combinator ++ " $ do") :
+                      indent ls
+
+          -- Leaf tags
+          LeafCombinator -> [combinator]
+        -- Unknown tag
+          UnknownCombinator -> if ignore_ opts
+              then fromTagTree variant opts inner
+              else error $ "Line " ++ show row
+                           ++ ": tag '" ++ tag ++ "' is illegal in "
+                           ++ show variant
+  where
+    combinator :: String
+    combinator = 
+      let tag' = sanitize tag 
+      in 
+        case combinatorType variant (lowerize tag) of
+          UnknownCombinator ->
+            error $ "Line: " ++ show row ++ " tag '"
+                    ++ tag ++ "' is illegal in "
+                    ++ show variant
+          _ -> tag' ++ attributes' attrs
+    attributes' :: Show a => [(String, a)] -> [Char]
+    -- hack for <br> that needs attributes in Lucid
+    attributes' [] = if sanitize tag `elem` ["br_","hr_"] 
+                       then " []"
+                       else ""
+    attributes' xs =  (" [ " ++) . (++ " ]") . intercalate ", " . fmap displayAttr $ xs
+    displayAttr :: Show a => (String, a) -> String
+    displayAttr (k, v) = case k `elem` attributes variant of
+        True  -> let k' = sanitize k 
+                 in case k' of 
+                        "autofocus_" -> k'
+                        "checked_" -> k'
+                        "ngNonBindable_" -> k'
+                        _ -> k' ++ " " ++ show v
+        False -> case stripPrefix "data-" k of
+            Just prefix -> "data_" ++ " "
+                        ++ show prefix
+                        ++ " " ++ show v
+            Nothing | ignore_ opts -> ""
+                    | otherwise  -> error $ "Line " ++ show row
+                                 ++ ": attribute '"
+                                 ++ k ++ "' is illegal in "
+                                 ++ show variant
+-- for debug
+fromTagTree2 _ _ [TagLeaf (TagPosition _ _)] = []
+fromTagTree2 _ _ [] = []
+fromTagTree2 _ _ x = error $ "no pattern for: " ++ show x
+
+
+
+-- Escape a number of characters
+escape :: Char -> ShowS
+escape '"'  = showString "\\\""
+escape c = showLitChar c
+
+escapeString :: String -> String
+escapeString = foldr escape ""
+
+
 -- | Produce the Lucid code from the HTML. The result is a list of lines.
 --
 fromHtml :: HtmlVariant  -- ^ Used HTML variant
@@ -130,8 +283,8 @@ fromHtml _ opts t
       | noTrimText_ opts = id
       | otherwise        = reverse . dropWhile isSpace . reverse . dropWhile isSpace
     -- Escape a number of characters
-    escape '"'  = showString "\\\""
-    escape x = showLitChar x
+    -- escape '"'  = showString "\\\""
+    -- escape x = showLitChar x
     {-
     escape '\n' = "\\n"
     escape '\t' = "\\t"
@@ -229,7 +382,8 @@ getIOImports =
     , ""
     ]
 
-
+-------- Orig
+{-
 -- | Convert the HTML to lucid code.
 --
 lucidFromHtml :: HtmlVariant  -- ^ Variant to use
@@ -253,6 +407,25 @@ lucidFromHtml variant opts name =
           -- (parseOptions :: ParseOptions String){ optTagPosition = True ,
                           -- optEntityData = \(str,_) -> [TagText $ "&" ++ str ++ [';' | b]],
                           -- optEntityAttrib = \(str,_) -> ("&" ++ str ++ [';' | b], []) }
+-}
+
+
+-- | Convert the HTML to lucid code.
+--
+lucidFromHtml2 :: HtmlVariant  -- ^ Variant to use
+               -> Options      -- ^ Build options
+               -> String       -- ^ Template name
+               -> String       -- ^ HTML code
+               -> String       -- ^ Resulting code
+lucidFromHtml2 variant opts name =
+    unlines . addSignature . fromTagTree variant opts
+            . parseTreeOptions parseOptions { optTagPosition = True}
+  where
+    addSignature body = [ name ++ " :: Html ()"
+                        , name ++ " = do"
+                        ] ++ indent body
+
+lucidFromHtml = lucidFromHtml2
 
 -- | Indent block of code.
 --
@@ -267,3 +440,15 @@ data Options = Options
              }
   deriving (Show)
 
+-- Testing
+{-
+
+:{
+test1 = do
+  body <- readFile "tests/issue_11-checked.html"
+  let tree = parseTreeOptions parseOptions{ optTagPosition = True } body
+  let mainOpts = Options { ignore_ = False, noTrimText_ = True }
+  putStrLn $ unlines $ fromTagTree html5S mainOpts tree
+:}
+
+-}
