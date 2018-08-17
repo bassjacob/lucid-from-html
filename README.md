@@ -6,11 +6,14 @@ Please report any issues (including examples of html files that don’t parse co
 
 1.  Clone the repository.
 
-2.  Change to the directory of the repository.
+2.  Change to the directory `lucid-from-html`.
 
 3.  Run
 
         > cabal install
+    or  
+    
+        > stack install
 
 # Run
 
