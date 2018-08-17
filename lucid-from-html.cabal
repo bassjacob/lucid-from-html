@@ -1,30 +1,32 @@
--- This file has been generated from package.yaml by hpack version 0.17.0.
+cabal-version: >= 1.10
+
+-- This file has been generated from package.yaml by hpack version 0.29.7.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: a2be23930a9f3d9c2d3bec3624da2e0f5b2b03008202aae9e309abf465d1bded
 
 name:          lucid-from-html
-version:       0.7.0
+version:       0.9.0
 synopsis:      Tool to convert HTML to Lucid code.
 description:   Tool that converts HTML files to Haskell code, ready to be
                used with the Lucid library.
 category:      Text
 stability:     Experimental
-homepage:      https://github.com/dbaynard/lucid-from-html#readme
-bug-reports:   https://github.com/dbaynard/lucid-from-html/issues
-author:        David Baynard, Jasper Van der Jeugt, Simon Meier
-maintainer:    davidbaynard@gmail.com
+homepage:      https://github.com/alogic0/lucid-from-html#readme
+bug-reports:   https://github.com/alogic0/lucid-from-html/issues
+author:        Oleg Tsybulskyi, David Baynard, Jasper Van der Jeugt, Simon Meier
+maintainer:    alogic0@gmail.com
 license:       BSD3
 license-file:  LICENSE
 build-type:    Simple
-cabal-version: >= 1.10
-
 extra-source-files:
   CHANGELOG.md
   README.md
 
 source-repository head
   type: git
-  location: https://github.com/dbaynard/lucid-from-html
+  location: https://github.com/alogic0/lucid-from-html
 
 library
   hs-source-dirs:
@@ -35,9 +37,9 @@ library
     containers >=0.3,
     directory >=1.0,
     filepath >=1.1,
-    tagsoup >=0.14.2,
-    text >= 0.11,
-    lucid >= 2.9.9
+    lucid >=2.9.9,
+    tagsoup >=0.14.1,
+    text >=0.11
   exposed-modules:
     Lucid.Generate
     Lucid.Sanitize
@@ -49,6 +51,8 @@ library
 
 executable lucid-from-html
   main-is: Main.hs
+  other-modules:
+    Paths_lucid_from_html
   hs-source-dirs:
     app
   ghc-options: -Wall
@@ -57,20 +61,30 @@ executable lucid-from-html
     containers >=0.3,
     directory >=1.0,
     filepath >=1.1,
-    lucid-from-html
+    lucid >=2.9.9,
+    lucid-from-html,
+    tagsoup >=0.14.1,
+    text >=0.11
   default-language: Haskell2010
 
 test-suite test
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      tests
-  main-is:             test.hs
+  type: exitcode-stdio-1.0
+  main-is: test.hs
+  other-modules:
+    Paths_lucid_from_html
+  hs-source-dirs:
+    tests
   ghc-options: -Wall
-  build-depends: 
-    base >=4,
-    tasty-golden >= 2.3.1.1,
+  build-depends:
+    base >=4 && <5,
     bytestring >=0.10,
+    containers >=0.3,
+    directory >=1.0,
+    filepath >=1.1,
+    lucid >=2.9.9,
+    lucid-from-html,
+    tagsoup >=0.14.1,
     tasty >=0.8,
-    filepath,
-    lucid-from-html
+    tasty-golden >=2.3.1.1,
+    text >=0.11
   default-language: Haskell2010
-
