@@ -119,8 +119,9 @@ fromTagTree2 variant opts [TagLeaf (TagPosition row _),  TagLeaf x] =
   where
     -- Remove whitespace on both ends of a string
     trim
-      | noTrimText_ opts = id
-      | otherwise        = reverse . dropWhile isSpace . reverse . dropWhile isSpace
+      | trimText_ opts = reverse . dropWhile isSpace . reverse . dropWhile isSpace
+      | otherwise = id
+
 fromTagTree2 variant opts branch@[TagLeaf (TagPosition row _), TagBranch tag attrs inner] =
   let tag' = lowerize tag
   in
@@ -215,7 +216,7 @@ indent = map ("    " ++)
 --
 data Options = Options
              { ignore_     :: Bool -- ^ ignore errors
-             , noTrimText_ :: Bool -- ^ do not trim text
+             , trimText_ :: Bool -- ^ do not trim text
              }
   deriving (Show)
 
