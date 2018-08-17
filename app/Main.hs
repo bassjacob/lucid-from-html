@@ -60,7 +60,7 @@ main = do
     ignore' opts = ArgIgnoreErrors `elem` opts
 
     -- Should we trim whitespace from text?
-    trim' opts = ArgNoTrimText `elem` opts
+    trim' opts = ArgTrimText `elem` opts
 
 
 -- | Help information.
@@ -91,7 +91,7 @@ help = unlines $
 --
 data Arg = ArgStandalone
          | ArgIgnoreErrors
-         | ArgNoTrimText
+         | ArgTrimText
          | ArgHelp
          deriving (Show, Eq)
 
@@ -101,7 +101,7 @@ options :: [OptDescr Arg]
 options =
     [ Option "s" ["standalone"] (NoArg ArgStandalone) "Produce standalone code"
     , Option "e" ["ignore-errors"] (NoArg ArgIgnoreErrors) "Ignore most errors"
-    , Option "t" ["no-trim-text"]  (NoArg ArgNoTrimText) "Do not trim text"
+    , Option "t" ["trim-text"]  (NoArg ArgTrimText) "Trim text from ending spaces"
     , Option "h" ["help"] (NoArg ArgHelp) "Show help"
     ]
 
