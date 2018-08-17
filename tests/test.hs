@@ -10,7 +10,7 @@ main = defaultMain =<< goldenTests
 
 goldenTests :: IO TestTree
 goldenTests = do
-  let opts = Options { ignore_ = False, noTrimText_ = True }
+  let opts = Options { ignore_ = False, trimText_ = False }
       lucidFromHtml' = lucidFromHtml html5S opts "template" 
   htmlFiles <- findByExtension [".html"] "."
   return $ testGroup "HtmlToLucid golden tests"

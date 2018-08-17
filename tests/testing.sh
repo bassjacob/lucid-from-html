@@ -10,7 +10,7 @@ echo "Processing html"
 for i in *.html;
   do hs=${i%.html}.hs;
   echo $i;
-  lucid-from-html -s -t $i > ${OUT}/$hs;
+  lucid-from-html -s $i > ${OUT}/$hs;
 done
 echo "---- Changing to $OUT"
 cd ${OUT}/
