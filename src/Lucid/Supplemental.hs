@@ -46,6 +46,9 @@ attributeElements =
   , "align"
   , "itemscope"
   , "itemtype"
+  , "integrity"
+  , "aria-controls"
+  , "aria-current"
   ]
 -- hack for svg
   ++ svgAttrs ++ svgCamelCaseAttrs
